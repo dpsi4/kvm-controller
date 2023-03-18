@@ -17,3 +17,5 @@ Environment Variables.
 Omission of the `KVM_CONTROLLER_ADDRESS` variable or `-address` command line switch
 will result in the use of the default IP address of the KVM, a simple convenience.
 
+## Future Plans
+- Add the remaining command functions
