@@ -10,12 +10,16 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
+	"time"
 )
 
 const EnvAddress = "KVM_CONTROLLER_ADDRESS"
 const EnvDevice = "KVM_CONTROLLER_DEVICE"
+const KvmPort = 5000
+const KvmAddress = "192.168.1.10"
 
 var address, device string
 
@@ -32,7 +36,7 @@ func main() {
 	flag.Parse()
 
 	var parsedAddress string
-	var parsedDevice int
+	var parsedDevice int8
 	var justExit = false
 
 	// Address Parsing and precedence
@@ -41,16 +45,15 @@ func main() {
 	} else if os.Getenv(EnvAddress) != "" {
 		parsedAddress = os.Getenv(EnvAddress)
 	} else {
-		fmt.Fprintln(os.Stderr, "No Address given to control")
-		justExit = true
+		parsedAddress = KvmAddress
 	}
 
 	// Device Parsing and precedence
 	if *cliDevice > 0 {
-		parsedDevice = *cliDevice
+		parsedDevice = int8(*cliDevice)
 	} else if os.Getenv(EnvDevice) != "" {
-		if v, err := strconv.ParseInt(os.Getenv(EnvDevice), 10, 64); err == nil {
-			parsedDevice = int(v)
+		if v, err := strconv.ParseInt(os.Getenv(EnvDevice), 10, 8); err == nil {
+			parsedDevice = int8(v)
 		} else {
 			fmt.Fprintln(os.Stderr, "Unable to parse DEVICE from Environment Variable!")
 			justExit = true
@@ -63,6 +66,16 @@ func main() {
 	if justExit {
 		os.Exit(1)
 	}
-	fmt.Fprintln(os.Stderr, "Parsed Address: ", parsedAddress)
-	fmt.Fprintln(os.Stderr, "Parsed Device: ", parsedDevice)
+
+	var connection = net.JoinHostPort(parsedAddress, fmt.Sprintf("%d", KvmPort))
+	kvmConnection, err := net.DialTimeout("tcp", connection, 1*time.Second)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Timeout during connect")
+		os.Exit(1)
+	}
+
+	// Issue command to the KVM
+	command := []byte{0xAA, 0xBB, 0x03, 0x01, byte(parsedDevice), 0xEE}
+	kvmConnection.Write(command)
+	kvmConnection.Close()
 }
