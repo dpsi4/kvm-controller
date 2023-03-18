@@ -4,7 +4,7 @@ CLI controller for the TeSmart KVMs Network capabilities
 
 ## Usage
 
-    kvm-controller -address <HOSTNAME/IP> -device <KVM PORT Number>
+    kvm-controller -address <Hostname/IP> -device <KVM Device Port Number>
 
 ## Environment Variables
 Both the `-address` and `-device` parameters can be controlled using
